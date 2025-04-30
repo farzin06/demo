@@ -1,161 +1,328 @@
-import { useState } from 'react';
-import googleLogo from './assets/google-logo.svg';
-import FeatureCard from './FeatureCard';
+import { Field, Form, Formik } from 'formik'
+import { motion, useAnimation, useScroll } from "framer-motion"
+import { useEffect, useState } from "react"
+import { FcGoogle } from "react-icons/fc"
+import * as Yup from 'yup'
+import AdvancedSearchIcon from './assets/advanced-search.svg'
+import GrowthIcon from './assets/growth.svg'
+import IntegrationsIcon from './assets/integrations.svg'
+import LightbulbIcon from './assets/lightbulb.svg'
 
-// Import your icons
-import search from './assets/advanced-search.svg';
-import growth from './assets/growth.svg';
-import integrations from './assets/integrations.svg';
-import lightbulb from './assets/lightbulb.svg';
+const validationSchema = Yup.object().shape({
+  email: Yup.string()
+    .email('Invalid email address')
+    .required('Email is required'),
+  password: Yup.string()
+    .min(8, 'Password must be at least 8 characters')
+    .required('Password is required'),
+  confirmPassword: Yup.string()
+    .oneOf([Yup.ref('password'), null], 'Passwords must match')
+    .required('Confirm password is required')
+})
 
-function App() {
-  const [isLogin, setIsLogin] = useState(true);
+const App = () => {
+  const [activeTab, setActiveTab] = useState("register")
+  const controls = useAnimation()
+  const { scrollY } = useScroll()
+  const [lastScrollY, setLastScrollY] = useState(0)
+  const [scrollDirection, setScrollDirection] = useState('down')
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY
+      if (currentScrollY > lastScrollY) {
+        setScrollDirection('down')
+      } else {
+        setScrollDirection('up')
+      }
+      setLastScrollY(currentScrollY)
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [lastScrollY])
+
+  useEffect(() => {
+    if (scrollDirection === 'down') {
+      controls.start("visible")
+    } else {
+      controls.start("hidden")
+    }
+  }, [scrollDirection, controls])
+
+  const handleSubmit = (values, { setSubmitting }) => {
+    console.log(values)
+    setSubmitting(false)
+  }
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        duration: 0.6,
+        ease: "easeInOut"
+      }
+    }
+  }
+
+  const featureVariants = {
+    hidden: (direction) => ({ 
+      opacity: 0, 
+      y: direction === 'down' ? 30 : -30,
+      x: direction === 'left' ? -30 : 30 
+    }),
+    visible: (i) => ({
+      opacity: 1,
+      y: 0,
+      x: 0,
+      transition: {
+        delay: i * 0.2,
+        duration: 0.6,
+        ease: [0.25, 0.1, 0.25, 1]
+      }
+    })
+  }
+
+  const toggleVariants = {
+    initial: { scale: 1 },
+    hover: { 
+      scale: 1.05,
+      transition: { duration: 0.2, ease: "easeOut" }
+    },
+    tap: { 
+      scale: 0.95,
+      transition: { duration: 0.1, ease: "easeOut" }
+    },
+    active: { 
+      scale: 1.05,
+      transition: { 
+        duration: 0.3,
+        ease: [0.25, 0.1, 0.25, 1]
+      }
+    }
+  }
 
   return (
-    <div
-      className="h-screen w-screen relative"
-      style={{
-        background: 'linear-gradient(to right, #ffffff 0%, #e3f2ff 20%, #e3f2ff 60%, #ffffff 100%)'
-      }}
+    <motion.div 
+      className="min-h-screen w-full flex items-center justify-center bg-[#EBF5FF] p-4"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
     >
-      <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-2 gap-10 p-6">
-        {/* Left side (Login/Register form) */}
-        <div className="bg-white p-8 rounded-2xl shadow-lg w-96 absolute left-[237px] top-[173px]">
-          {/* Toggle Switch */}
-          <div className="flex items-center justify-center mb-6">
-            <div
-              className="bg-white w-48 h-10 rounded-full flex items-center relative cursor-pointer border border-gray-300 overflow-hidden"
-              onClick={() => setIsLogin(!isLogin)}
+      <div className="w-full max-w-[1100px] mx-auto flex flex-col lg:flex-row bg-white rounded-2xl overflow-hidden">
+        {/* Left Panel (Form) */}
+        <div className="w-full lg:w-[450px] p-8">
+          {/* Toggle Buttons */}
+          <div className="flex items-center justify-center gap-2 mb-8">
+            <motion.button
+              variants={toggleVariants}
+              initial="initial"
+              whileHover="hover"
+              whileTap="tap"
+              animate={activeTab === "login" ? "active" : "initial"}
+              onClick={() => setActiveTab("login")}
+              className={`px-8 py-2 rounded-full text-[16px] transition-colors ${
+                activeTab === "login" ? 'bg-[#1E293B] text-white' : 'text-[#64748B]'
+              }`}
             >
-              {/* Moving blue slider */}
-              <div
-                className={`absolute w-1/2 h-10 bg-blue-500 rounded-full flex items-center justify-center transition-all duration-300 ${
-                  isLogin ? 'left-0' : 'left-1/2'
-                }`}
-              ></div>
-
-              {/* Labels */}
-              <div className={`w-1/2 text-center z-10 font-semibold transition-colors duration-300 ${isLogin ? 'text-white' : 'text-gray-600'}`}>
-                Login
-              </div>
-              <div className={`w-1/2 text-center z-10 font-semibold transition-colors duration-300 ${!isLogin ? 'text-white' : 'text-gray-600'}`}>
-                Register
-              </div>
-            </div>
+              Login
+            </motion.button>
+            <motion.button
+              variants={toggleVariants}
+              initial="initial"
+              whileHover="hover"
+              whileTap="tap"
+              animate={activeTab === "register" ? "active" : "initial"}
+              onClick={() => setActiveTab("register")}
+              className={`px-8 py-2 rounded-full text-[16px] transition-colors ${
+                activeTab === "register" ? 'bg-[#1E293B] text-white' : 'text-[#64748B]'
+              }`}
+            >
+              Register
+            </motion.button>
           </div>
 
           {/* Form */}
-          <form className="flex flex-col space-y-4">
-            <input
-              type="email"
-              placeholder="Email"
-              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-
-            {isLogin ? (
-              <>
-                <input
-                  type="password"
-                  placeholder="Password"
-                  className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                />
-              </>
-            ) : (
-              <>
-                <input
-                  type="password"
-                  placeholder="Set Password"
-                  className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                />
-                <input
-                  type="password"
-                  placeholder="Confirm New Password"
-                  className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                />
-              </>
-            )}
-
-            <button
-              type="submit"
-              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition-all"
-            >
-              {isLogin ? 'Login' : 'Register'}
-            </button>
-          </form>
-
-          {/* Below submit button - Text with link */}
-          <div className="mt-4 text-center text-sm text-gray-600">
-            {isLogin ? (
-              <>
-                Not a member?{' '}
-                <span
-                  onClick={() => setIsLogin(false)}
-                  className="text-blue-500 font-semibold cursor-pointer hover:underline"
-                >
-                  Register now
-                </span>
-              </>
-            ) : (
-              <>
-                Already a member?{' '}
-                <span
-                  onClick={() => setIsLogin(true)}
-                  className="text-blue-500 font-semibold cursor-pointer hover:underline"
-                >
-                  Login now
-                </span>
-              </>
-            )}
-          </div>
-
-          {/* Divider with OR */}
-          <div className="flex items-center my-6">
-            <div className="flex-grow h-px bg-gray-300"></div>
-            <span className="px-4 text-gray-500 text-sm">or</span>
-            <div className="flex-grow h-px bg-gray-300"></div>
-          </div>
-
-          {/* Continue with Google Button */}
-          <button
-            type="button"
-            className="flex items-center justify-center w-full border border-gray-300 rounded-lg py-2 hover:bg-gray-100 transition-all"
+          <Formik
+            initialValues={{
+              email: '',
+              password: '',
+              confirmPassword: ''
+            }}
+            validationSchema={validationSchema}
+            onSubmit={handleSubmit}
           >
-            {/* Google logo */}
-            <img
-              src={googleLogo}
-              alt="Google"
-              className="w-5 h-5 mr-2"
-            />
-            <span className="text-gray-700 font-semibold">Continue with Google</span>
-          </button>
+            {({ errors, touched, isSubmitting }) => (
+              <Form className="space-y-4">
+                <div>
+                  <Field
+                    type="email"
+                    name="email"
+                    placeholder="Email Address"
+                    className="w-full px-4 py-3 bg-[#F8FAFC] rounded-md text-[16px] placeholder-[#94A3B8] focus:outline-none"
+                  />
+                  {errors.email && touched.email && (
+                    <div className="text-red-500 text-sm mt-1">{errors.email}</div>
+                  )}
+                </div>
+
+                <div>
+                  <Field
+                    type="password"
+                    name="password"
+                    placeholder="Set Password"
+                    className="w-full px-4 py-3 bg-[#F8FAFC] rounded-md text-[16px] placeholder-[#94A3B8] focus:outline-none"
+                  />
+                  {errors.password && touched.password && (
+                    <div className="text-red-500 text-sm mt-1">{errors.password}</div>
+                  )}
+                </div>
+
+                {activeTab === "register" && (
+                  <div>
+                    <Field
+                      type="password"
+                      name="confirmPassword"
+                      placeholder="Confirm Password"
+                      className="w-full px-4 py-3 bg-[#F8FAFC] rounded-md text-[16px] placeholder-[#94A3B8] focus:outline-none"
+                    />
+                    {errors.confirmPassword && touched.confirmPassword && (
+                      <div className="text-red-500 text-sm mt-1">{errors.confirmPassword}</div>
+                    )}
+                  </div>
+                )}
+
+                <motion.button
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-[#1E293B] text-white py-3 rounded-md text-[15px] font-medium mt-2"
+                >
+                  {activeTab === "login" ? "Login" : "Register"}
+                </motion.button>
+
+                <div className="text-center mt-4">
+                  <p className="text-[15px] text-[#64748B]">
+                    {activeTab === "register" ? "Already a member?" : "New here?"}{" "}
+                    <button 
+                      type="button"
+                      onClick={() => setActiveTab(activeTab === "register" ? "login" : "register")}
+                      className="text-[#3B82F6] font-medium"
+                    >
+                      {activeTab === "register" ? "Login now" : "Register now"}
+                    </button>
+                  </p>
+                </div>
+
+                <div className="flex items-center my-6">
+                  <div className="flex-1 h-[1px] bg-[#E2E8F0]"></div>
+                  <span className="px-4 text-[15px] text-[#94A3B8]">or</span>
+                  <div className="flex-1 h-[1px] bg-[#E2E8F0]"></div>
+                </div>
+
+                <motion.button
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  type="button"
+                  className="w-full flex items-center justify-center gap-2 border-2 border-[#1E293B] rounded-md py-2.5 text-[15px] text-[#475569]"
+                >
+                  <FcGoogle size={20} />
+                  <span>Continue with google</span>
+                </motion.button>
+              </Form>
+            )}
+          </Formik>
         </div>
 
-        {/* Right side (Feature list) */}
-        <div>
-          <FeatureCard
-            icon={search}
-            title="Advanced Detection Accuracy"
-            description="Identify VPN usage with precision, ensuring you stay in full control of user access and security."
-          />
-          <FeatureCard
-            icon={growth}
-            title="Reliable and Scalable"
-            description="Our system grows with your needs, delivering consistent performance whether you monitor hundreds or millions of users."
-          />
-          <FeatureCard
-            icon={integrations}
-            title="Seamless Integration"
-            description="Easily embed our VPN detection into your existing platforms without disrupting your operations."
-          />
-          <FeatureCard
-            icon={lightbulb}
-            title="Constant Innovation"
-            description="Benefit from regular updates that adapt to new VPN technologies, keeping you one step ahead of potential threats."
-          />
+        {/* Right Panel (Features) */}
+        <div className="flex-1 bg-[#EBF5FF] p-8 lg:p-12">
+          <div className="max-w-[480px] space-y-12">
+            <motion.div 
+              className="flex items-start gap-3"
+              variants={featureVariants}
+              initial="hidden"
+              animate={controls}
+              custom={0}
+            >
+              <div className="flex-shrink-0 mt-1">
+                <img src={AdvancedSearchIcon} alt="Advanced Search" className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-[16px] font-medium mb-2 text-[#3B82F6]">
+                  Advanced Detection Accuracy
+                </h3>
+                <p className="text-[15px] text-[#475569] leading-relaxed">
+                  Identify VPN usage with precision, ensuring you stay in full control of user access and security.
+                </p>
+              </div>
+            </motion.div>
+
+            <motion.div 
+              className="flex items-start gap-3"
+              variants={featureVariants}
+              initial="hidden"
+              animate={controls}
+              custom={1}
+            >
+              <div className="flex-shrink-0 mt-1">
+                <img src={GrowthIcon} alt="Growth" className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-[16px] font-medium mb-2 text-[#3B82F6]">
+                  Reliable and Scalable
+                </h3>
+                <p className="text-[15px] text-[#475569] leading-relaxed">
+                  Our system grows with your needs, delivering consistent performance whether you monitor hundreds or millions of users.
+                </p>
+              </div>
+            </motion.div>
+
+            <motion.div 
+              className="flex items-start gap-3"
+              variants={featureVariants}
+              initial="hidden"
+              animate={controls}
+              custom={2}
+            >
+              <div className="flex-shrink-0 mt-1">
+                <img src={IntegrationsIcon} alt="Integrations" className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-[16px] font-medium mb-2 text-[#3B82F6]">
+                  Seamless Integration
+                </h3>
+                <p className="text-[15px] text-[#475569] leading-relaxed">
+                  Easily embed our VPN detection into your existing platforms without disrupting your operations.
+                </p>
+              </div>
+            </motion.div>
+
+            <motion.div 
+              className="flex items-start gap-3"
+              variants={featureVariants}
+              initial="hidden"
+              animate={controls}
+              custom={3}
+            >
+              <div className="flex-shrink-0 mt-1">
+                <img src={LightbulbIcon} alt="Lightbulb" className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-[16px] font-medium mb-2 text-[#3B82F6]">
+                  Constant Innovation
+                </h3>
+                <p className="text-[15px] text-[#475569] leading-relaxed">
+                  Benefit from regular updates that adapt to new VPN technologies, keeping you one step ahead of potential threats.
+                </p>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    </motion.div>
+  )
 }
 
-export default App;
+export default App
